@@ -18,6 +18,17 @@ enum Gender {
   OTHER
 }
 
+enum OTPType {
+  RESET
+  LOGIN
+}
+
+enum QuestionType {
+  MCQ
+  NUMERICAL
+  WRITTEN
+}
+
 enum Status {
   PUBLIC
   PRIVATE
@@ -35,13 +46,49 @@ model User {
   profile          Profile?
   createdCourses   Course[]           @relation("CreatedCourses")
   enrolledCourses  CourseEnrollment[]
-  courseProgress   CourseProgress[]   
+  courseProgress   CourseProgress[]
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
   ratingAndReviews RatingAndReview[]
   points           BigInt             @default(0)
   socketId         String?
   active           Boolean            @default(false)
+  followers        Follow[]           @relation("UserFollowers")
+  followings       Follow[]           @relation("UserFollowings")
+  posts            Post[]
+  comments         Comment[]
+}
+
+model Post {
+  id        BigInt    @id @default(autoincrement())
+  caption   String?
+  content   String[]
+  createdBy Int
+  creater   User      @relation(fields: [createdBy], references: [id])
+  createdAt DateTime  @default(now())
+  comments  Comment[]
+}
+
+model Comment {
+  id           BigInt      @id @default(autoincrement())
+  comment      String
+  postId       BigInt?
+  post         Post?       @relation(fields: [postId], references: [id])
+  subsectionId BigInt?
+  subsection   SubSection? @relation(fields: [subsectionId], references: [id])
+  commenterId  Int
+  commenter    User        @relation(fields: [commenterId], references: [id])
+  createdAt    DateTime    @default(now())
+}
+
+model Follow {
+  id          Int  @id @default(autoincrement())
+  follower    User @relation("UserFollowings", fields: [followerId], references: [id])
+  followerId  Int
+  following   User @relation("UserFollowers", fields: [followingId], references: [id])
+  followingId Int
+
+  @@unique([followerId, followingId])
 }
 
 model Profile {
@@ -67,7 +114,7 @@ model Course {
   category         String
   sections         Section[]
   studentsEnrolled CourseEnrollment[]
-  courseProgress   CourseProgress[]  
+  courseProgress   CourseProgress[]
   instructions     String[]
   status           Status
   createdAt        DateTime           @default(now())
@@ -104,6 +151,7 @@ model Section {
   subsections SubSection[]
   course      Course?      @relation(fields: [courseId], references: [id])
   courseId    BigInt?
+  test        Test?
 }
 
 model SubSection {
@@ -117,7 +165,9 @@ model SubSection {
   updatedAt   DateTime               @updatedAt
   section     Section?               @relation(fields: [sectionId], references: [id])
   sectionId   BigInt?
-  completions SubSectionCompletion[] 
+  completions SubSectionCompletion[]
+  questions   Question[]
+  comments    Comment[]
 }
 
 model CourseProgress {
@@ -130,18 +180,74 @@ model CourseProgress {
   completions SubSectionCompletion[]
   createdAt   DateTime               @default(now())
   updatedAt   DateTime               @updatedAt
-  @@unique([userId, courseId]) 
+
+  @@unique([userId, courseId])
 }
 
 model SubSectionCompletion {
   id               BigInt         @id @default(autoincrement())
   courseProgressId BigInt
   subSectionId     BigInt
-  watchTime        Int            @default(0) 
-  isFinished       Boolean        @default(false) 
+  watchTime        Int            @default(0)
+  isFinished       Boolean        @default(false)
   courseProgress   CourseProgress @relation(fields: [courseProgressId], references: [id], onDelete: Cascade)
   subSection       SubSection     @relation(fields: [subSectionId], references: [id], onDelete: Cascade)
   updatedAt        DateTime       @updatedAt
 
-  @@unique([courseProgressId, subSectionId]) 
+  @@unique([courseProgressId, subSectionId])
+}
+
+model OTP {
+  id        Int      @id @default(autoincrement())
+  otp       String   @unique
+  type      OTPType
+  email     String
+  createdAt DateTime @default(now())
+}
+
+model Question {
+  id            BigInt       @id @default(autoincrement())
+  question      String
+  options       String[]
+  correctOption String
+  type          QuestionType
+  marks         Int          @default(4)
+  subsectionId  BigInt?
+  subsection    SubSection?  @relation(fields: [subsectionId], references: [id])
+  testId        String?
+  test          Test?        @relation(fields: [testId], references: [id])
+  quizId        String?
+  quiz          Quiz?        @relation(fields: [quizId], references: [id])
+  createdAt     DateTime     @default(now())
+  updateAt      DateTime     @updatedAt
+}
+
+model Test {
+  id          String     @id @default(uuid())
+  title       String
+  description String?
+  guidlines   String[]
+  timeline    Int
+  startTime   DateTime
+  endTime     DateTime
+  sectionId   BigInt     @unique
+  section     Section    @relation(fields: [sectionId], references: [id])
+  questions   Question[]
+  createdAt   DateTime   @default(now())
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+model Quiz {
+  id           String     @id @default(uuid())
+  title        String
+  topic        String
+  noOfQuestion Int        @default(5)
+  questions    Question[]
+  difficulty   Difficulty
+  createdAt    DateTime   @default(now())
 }
