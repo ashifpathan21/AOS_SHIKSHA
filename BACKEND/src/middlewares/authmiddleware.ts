@@ -4,6 +4,7 @@ import { decodeToken } from "../utils/jwt.js";
 import { success } from "zod";
 import prisma from "../utils/db.js";
 import type { UserRequest } from "../types/express/index.js";
+import { INTERNAL_SERVER_ERROR } from "../utils/functionality.js";
 
 
 export const authenticate = async (req: UserRequest, res: Response, next: NextFunction) => {
@@ -48,5 +49,64 @@ export const authenticate = async (req: UserRequest, res: Response, next: NextFu
             success: false,
             message: "Internal Server Error"
         })
+    }
+}
+
+
+export const isStudent = async (req: UserRequest, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.user?.id
+        const userEmail = req.user?.email
+        if (!userId || !userEmail) {
+            return res.status(StatusCodes.UNAUTHORIZED).json({
+                success: false,
+                message: "Unauthorized Access"
+            })
+        }
+        const user = await prisma.user.findFirst({
+            where: {
+                id: Number(userId),
+                email: userEmail
+            }
+        })
+        if (!user || user.accountType !== 'STUDENT') {
+            return res.status(StatusCodes.UNAUTHORIZED).json({
+                success: false,
+                message: "Unauthorized Access"
+            })
+        }
+        next()
+    } catch (error) {
+        INTERNAL_SERVER_ERROR(res, error)
+    }
+}
+
+
+
+export const isInstructor = async (req: UserRequest, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.user?.id
+        const userEmail = req.user?.email
+        if (!userId || !userEmail) {
+            return res.status(StatusCodes.UNAUTHORIZED).json({
+                success: false,
+                message: "Unauthorized Access"
+            })
+        }
+        const user = await prisma.user.findFirst({
+            where: {
+                id: Number(userId),
+                email: userEmail
+            }
+        })
+        if (!user || user.accountType !== 'INSTRUCTOR') {
+            return res.status(StatusCodes.UNAUTHORIZED).json({
+                success: false,
+                message: "Unauthorized Access"
+            })
+        }
+        next()
+    } catch (error) {
+        INTERNAL_SERVER_ERROR(res, error)
     }
 }

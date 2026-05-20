@@ -120,6 +120,7 @@ model Course {
   outcomes         String[]
   price            BigInt?
   thumbnail        String
+  thumbnailId      String
   category         String
   sections         Section[]
   studentsEnrolled CourseEnrollment[]
@@ -213,7 +214,7 @@ model OTP {
   email       String
   name        String
   password    String
-  lastSend    DateTime   @default(now())
+  lastSend    DateTime    @default(now())
   accountType AccountType @default(STUDENT)
   createdAt   DateTime    @default(now())
 }

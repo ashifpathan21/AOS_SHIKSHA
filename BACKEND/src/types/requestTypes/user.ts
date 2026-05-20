@@ -4,7 +4,7 @@ import { AccountType, Gender } from '../../../generated/prisma/enums.js'
 export const SignupSchema = z.object({
     name: z.string().trim(),
     email: z.email().trim(),
-    accountType: z.nativeEnum(AccountType).default("STUDENT"),
+    accountType: z.enum(AccountType).default("STUDENT"),
     password: z.string().trim().min(8),
 })
 
@@ -20,7 +20,7 @@ export const OTPSchema = z.object({
 
 
 export const ProfileSchema = z.object({
-    gender: z.nativeEnum(Gender).optional(),
+    gender: z.enum(Gender).optional(),
     dob: z.date().optional(),
     about: z.string().trim().optional(),
     phoneNumber: z.string().trim().optional(),
