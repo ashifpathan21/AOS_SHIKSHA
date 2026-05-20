@@ -40,9 +40,10 @@ model User {
   name             String
   username         String?
   email            String
-  password         String
-  accountType      AccountType
-  image            String
+  password         String?
+  accountType      AccountType        @default(STUDENT)
+  image            String?
+  imageId          String?
   profile          Profile?
   createdCourses   Course[]           @relation("CreatedCourses")
   enrolledCourses  CourseEnrollment[]
@@ -59,10 +60,18 @@ model User {
   comments         Comment[]
 }
 
+model Content {
+  id     BigInt  @id @default(autoincrement())
+  url    String
+  urlId  String
+  post   Post?   @relation(fields: [postId], references: [id])
+  postId BigInt?
+}
+
 model Post {
   id        BigInt    @id @default(autoincrement())
   caption   String?
-  content   String[]
+  content   Content[]
   createdBy Int
   creater   User      @relation(fields: [createdBy], references: [id])
   createdAt DateTime  @default(now())
@@ -198,11 +207,15 @@ model SubSectionCompletion {
 }
 
 model OTP {
-  id        Int      @id @default(autoincrement())
-  otp       String   @unique
-  type      OTPType
-  email     String
-  createdAt DateTime @default(now())
+  id          Int         @id @default(autoincrement())
+  otp         String      
+  type        OTPType
+  email       String
+  name        String
+  password    String
+  accountType AccountType @default(STUDENT)
+  createdAt   DateTime    @default(now())
+
 }
 
 model Question {
