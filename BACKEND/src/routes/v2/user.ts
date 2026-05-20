@@ -1,7 +1,9 @@
 import { Router, type Request, type Response } from "express";
 import { upload, uploadToCloudinary } from "../../utils/cloudinaryUpload.js";
-import { googleLogin, login, signup, verifyOtp } from "../../controllers/authController.js";
+import { googleLogin, login, resetPassword, resetPasswordRequest, signup, verifyOtp } from "../../controllers/authController.js";
 import { authenticate } from "../../middlewares/authmiddleware.js";
+import { getUserDetails, updateImage, updateProfile } from "../../controllers/userController.js";
+import { auth } from "googleapis/build/src/apis/abusiveexperiencereport/index.js";
 const router = Router()
 
 /**
@@ -19,8 +21,14 @@ router.post('/login', login)
 
 router.get('/google/login', googleLogin)
 
-router.patch('/profile', authenticate, (req: Request, res: Response) => { })
+router.get('/info', authenticate, getUserDetails)
 
-router.patch('/image', authenticate, upload.single('file'), (req: Request, res: Response) => { })
+router.patch('/profile', authenticate, updateProfile)
+
+router.patch('/image', authenticate, upload.single('file'), updateImage)
+
+router.post('/password/reset/request', resetPasswordRequest)
+
+router.patch('/password/reset', resetPassword)
 
 export default router;

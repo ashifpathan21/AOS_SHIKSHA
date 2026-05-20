@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { email, z } from 'zod'
 import { AccountType, Gender } from '../../../generated/prisma/enums.js'
 
 export const SignupSchema = z.object({
@@ -25,4 +25,15 @@ export const ProfileSchema = z.object({
     about: z.string().trim().optional(),
     phoneNumber: z.string().trim().optional(),
     collegeName: z.string().trim().optional()
+})
+
+export const ResetPasswordRequestSchema = z.object({
+    email: z.email().trim()
+})
+
+export const ResetPasswordSchema = z.object({
+    token: z.string().trim(),
+    password: z.string().trim().min(8),
+    email: z.email().trim(),
+    otp: z.string().trim().length(6)
 })

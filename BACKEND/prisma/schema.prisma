@@ -208,14 +208,14 @@ model SubSectionCompletion {
 
 model OTP {
   id          Int         @id @default(autoincrement())
-  otp         String      
+  otp         String
   type        OTPType
   email       String
   name        String
   password    String
+  lastSend    DateTime   @default(now())
   accountType AccountType @default(STUDENT)
   createdAt   DateTime    @default(now())
-
 }
 
 model Question {

@@ -1,8 +1,19 @@
-const otpTemplate = (otp: string, title: 'signup' | 'reset_password'): string => {
+import 'dotenv/config'
+
+
+const otpTemplate = (
+	otp: string,
+	title: 'signup' | 'reset_password',
+	token?: string,
+): string => {
 	const titleText = title === 'signup' ? 'Registration' : 'Password Reset';
-	const messageText = title === 'signup' 
+	const messageText = title === 'signup'
 		? 'Thank you for registering with AOS-Shiksha. To complete your registration, please use the following OTP (One-Time Password) to verify your account:'
 		: 'You have requested to reset your password. Please use the following OTP (One-Time Password) to proceed:';
+	const resetLink = title === 'reset_password' && token
+		? `<p>Please click the button below to reset your password:</p>
+			<a class="cta" href="${process.env.FRONTEND_URI}/forget-password/${token}">Reset Password</a>`
+		: '';
 
 	return `<!DOCTYPE html>
 	<html>
@@ -80,6 +91,7 @@ const otpTemplate = (otp: string, title: 'signup' | 'reset_password'): string =>
 				<p>Dear User,</p>
 				<p>${messageText}</p>
 				<h2 class="highlight">${otp}</h2>
+				${resetLink}
 				<p>This OTP is valid for 5 minutes. If you did not request this verification, please disregard this email. Once your account is verified, you will have full access to our platform.</p>
 			</div>
 			<div class="support">
