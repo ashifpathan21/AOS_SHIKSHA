@@ -1,9 +1,8 @@
-import { Router, type Request, type Response } from "express";
-import { upload, uploadToCloudinary } from "../../utils/cloudinaryUpload.js";
+import { Router } from "express";
+import { upload } from "../../utils/cloudinaryUpload.js";
 import { googleLogin, login, resetPassword, resetPasswordRequest, signup, verifyOtp } from "../../controllers/authController.js";
 import { authenticate } from "../../middlewares/authmiddleware.js";
 import { getUserDetails, updateImage, updateProfile } from "../../controllers/userController.js";
-import { auth } from "googleapis/build/src/apis/abusiveexperiencereport/index.js";
 const router = Router()
 
 /**

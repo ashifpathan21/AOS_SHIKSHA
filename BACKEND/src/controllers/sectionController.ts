@@ -1,7 +1,7 @@
 import type { Response } from "express";
 import type { UserRequest } from "../types/express/index.js";
 import { INTERNAL_SERVER_ERROR } from "../utils/functionality.js";
-import z, { success } from "zod";
+import z from "zod";
 import { SectionSchema } from "../types/requestTypes/section.js";
 import { StatusCodes } from "http-status-codes";
 import prisma from "../utils/db.js";

@@ -1,4 +1,4 @@
-import { email, z } from 'zod'
+import {  z } from 'zod'
 import { AccountType, Gender } from '../../../generated/prisma/enums.js'
 
 export const SignupSchema = z.object({

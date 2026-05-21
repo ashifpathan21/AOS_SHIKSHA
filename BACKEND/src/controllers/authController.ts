@@ -4,7 +4,7 @@ import { StatusCodes } from 'http-status-codes'
 import axios from 'axios'
 import prisma from "../utils/db.js";
 import { signToken } from "../utils/jwt.js";
-import { email, success, z } from 'zod'
+import { z } from 'zod'
 import { LoginSchema, OTPSchema, ResetPasswordRequestSchema, ResetPasswordSchema, SignupSchema } from "../types/requestTypes/user.js";
 import otpgenerator, { generate } from 'otp-generator'
 import mailSender from "../utils/mailer.js";

@@ -1,7 +1,6 @@
-import type { NextFunction, Request, Response } from "express";
+import type { NextFunction,  Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { decodeToken } from "../utils/jwt.js";
-import { success } from "zod";
 import prisma from "../utils/db.js";
 import type { UserRequest } from "../types/express/index.js";
 import { INTERNAL_SERVER_ERROR } from "../utils/functionality.js";
