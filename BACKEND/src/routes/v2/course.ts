@@ -1,35 +1,36 @@
 import { Router } from "express";
-import { authenticate, isInstructor } from "../../middlewares/authmiddleware.js";
-import { createCourse, deleteCourse, getAllCourseBasicDetails, getCourseBasicDetails, updateCourse } from "../../controllers/courseController.js";
+import { authenticate, isInstructor, isItInstructorsCourse, isStudent, isStudentEnrolled } from "../../middlewares/authmiddleware.js";
+import { createCourse, deleteCourse, enrollIntoCourse, getAllCourseBasicDetails, getAllCoursesForInstructor, getCourseBasicDetails, getCourseDetailsForInstructor, getCourseDetailsForStudent, updateCourse } from "../../controllers/courseController.js";
+import { upload } from "../../utils/cloudinaryUpload.js";
 const router = Router()
 
 // create course
-router.post('/', authenticate, isInstructor, createCourse)
+router.post('/', authenticate, isInstructor, upload.single("file"), createCourse)
 
 //update course
-router.patch('/:id', authenticate, isInstructor, updateCourse)
+router.patch('/:courseId', authenticate, isInstructor, isItInstructorsCourse, upload.single("file"), updateCourse)
 
 //delete course
-router.delete('/:id', authenticate, isInstructor, deleteCourse)
+router.delete('/:courseId', authenticate, isInstructor, isItInstructorsCourse, deleteCourse)
 
 // get all course basic details 
 router.get('/', getAllCourseBasicDetails)
 
-// get a single course basic details 
-router.get('/:id', getCourseBasicDetails)
 
 // get a authenticated course details for student
-router.get('/details/student/:id')
+router.get('/details/student/:courseId', authenticate, isStudent, isStudentEnrolled, getCourseDetailsForStudent)
 
 // get a authenticated course details for instructor
-router.get('/details/instructor/:id')
+router.get('/details/instructor/:courseId', authenticate, isInstructor, isItInstructorsCourse, getCourseDetailsForInstructor)
 
 // get all instructor course 
-router.get('/instructor')
+router.get('/instructor', authenticate, isInstructor, getAllCoursesForInstructor)
 
 //enroll into a course 
-router.patch('/enroll/:id')
+router.patch('/enroll/:courseId', authenticate, isStudent, enrollIntoCourse)
 
 
+// get a single course basic details 
+router.get('/:coureId', getCourseBasicDetails)
 
 export default router

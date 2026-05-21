@@ -110,3 +110,61 @@ export const isInstructor = async (req: UserRequest, res: Response, next: NextFu
         INTERNAL_SERVER_ERROR(res, error)
     }
 }
+
+export const isStudentEnrolled = async (req: UserRequest, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+        const course = await prisma.course.findFirst({
+            where: {
+                id: Number(id),
+                studentsEnrolled: {
+                    some: {
+                        user: {
+                            email: req.user?.email,
+                            id: Number(req.user?.id)
+                        }
+                    }
+                }
+            }
+        })
+
+        if (!course) {
+            return res.status(StatusCodes.UNAUTHORIZED).json({
+                success: false,
+                message: "Unauthorized Access"
+            })
+        }
+        next()
+    } catch (error) {
+        INTERNAL_SERVER_ERROR(res, error)
+    }
+}
+
+
+
+
+export const isItInstructorsCourse = async (req: UserRequest, res: Response, next: NextFunction) => {
+    try {
+        const { courseId: id } = req.params;
+        const course = await prisma.course.findFirst({
+            where: {
+                id: Number(id),
+                instructor: {
+                    id: Number(req.user?.id),
+                    email: req.user?.email
+                }
+            }
+        })
+
+        if (!course) {
+            return res.status(StatusCodes.UNAUTHORIZED).json({
+                success: false,
+                message: "Unauthorized Access"
+            })
+        }
+        next()
+    } catch (error) {
+        INTERNAL_SERVER_ERROR(res, error)
+    }
+}
+

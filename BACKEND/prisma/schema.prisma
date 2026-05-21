@@ -51,7 +51,7 @@ model User {
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
   ratingAndReviews RatingAndReview[]
-  points           BigInt             @default(0)
+  points           Int                @default(0)
   socketId         String?
   active           Boolean            @default(false)
   followers        Follow[]           @relation("UserFollowers")
@@ -61,40 +61,43 @@ model User {
 }
 
 model Content {
-  id     BigInt  @id @default(autoincrement())
+  id     Int    @id @default(autoincrement())
   url    String
   urlId  String
-  post   Post?   @relation(fields: [postId], references: [id])
-  postId BigInt?
+  post   Post?  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId Int?
 }
 
 model Post {
-  id        BigInt    @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   caption   String?
   content   Content[]
   createdBy Int
-  creater   User      @relation(fields: [createdBy], references: [id])
+  creater   User      @relation(fields: [createdBy], references: [id], onDelete: Cascade)
   createdAt DateTime  @default(now())
   comments  Comment[]
 }
 
 model Comment {
-  id           BigInt      @id @default(autoincrement())
+  id           Int         @id @default(autoincrement())
   comment      String
-  postId       BigInt?
-  post         Post?       @relation(fields: [postId], references: [id])
-  subsectionId BigInt?
-  subsection   SubSection? @relation(fields: [subsectionId], references: [id])
+  parentId     Int?
+  parent       Comment?    @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies      Comment[]   @relation("CommentReplies")
+  postId       Int?
+  post         Post?       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  subsectionId Int?
+  subsection   SubSection? @relation(fields: [subsectionId], references: [id], onDelete: Cascade)
   commenterId  Int
-  commenter    User        @relation(fields: [commenterId], references: [id])
+  commenter    User        @relation(fields: [commenterId], references: [id], onDelete: Cascade)
   createdAt    DateTime    @default(now())
 }
 
 model Follow {
   id          Int  @id @default(autoincrement())
-  follower    User @relation("UserFollowings", fields: [followerId], references: [id])
+  follower    User @relation("UserFollowings", fields: [followerId], references: [id], onDelete: Cascade)
   followerId  Int
-  following   User @relation("UserFollowers", fields: [followingId], references: [id])
+  following   User @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
   followingId Int
 
   @@unique([followerId, followingId])
@@ -107,18 +110,18 @@ model Profile {
   about       String?
   phoneNumber String?
   collegeName String?
-  user        User      @relation(fields: [userId], references: [id])
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      Int       @unique
 }
 
 model Course {
-  id               BigInt             @id @default(autoincrement())
+  id               Int                @id @default(autoincrement())
   name             String
   description      String
-  instructor       User               @relation("CreatedCourses", fields: [userId], references: [id], onDelete: NoAction)
+  instructor       User               @relation("CreatedCourses", fields: [userId], references: [id], onDelete: Cascade)
   userId           Int
   outcomes         String[]
-  price            BigInt?
+  price            Int?
   thumbnail        String
   thumbnailId      String
   category         String
@@ -134,10 +137,10 @@ model Course {
 
 model RatingAndReview {
   id       Int    @id @default(autoincrement())
-  user     User   @relation(fields: [userId], references: [id])
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId   Int
-  course   Course @relation(fields: [courseId], references: [id])
-  courseId BigInt
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId Int
   review   String
   rating   Int
 
@@ -145,45 +148,45 @@ model RatingAndReview {
 }
 
 model CourseEnrollment {
-  id        BigInt   @id @default(autoincrement())
-  courseId  BigInt
+  id        Int      @id @default(autoincrement())
+  courseId  Int
   userId    Int
-  course    Course   @relation(fields: [courseId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
   @@unique([courseId, userId])
 }
 
 model Section {
-  id          BigInt       @id @default(autoincrement())
+  id          Int          @id @default(autoincrement())
   name        String
   subsections SubSection[]
-  course      Course?      @relation(fields: [courseId], references: [id])
-  courseId    BigInt?
+  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId    Int
   test        Test?
 }
 
 model SubSection {
-  id          BigInt                 @id @default(autoincrement())
+  id          Int                    @id @default(autoincrement())
   title       String
   description String?
   videoUrl    String?
-  duration    BigInt?
+  duration    Int?
   points      Int                    @default(2)
   createdAt   DateTime               @default(now())
   updatedAt   DateTime               @updatedAt
-  section     Section?               @relation(fields: [sectionId], references: [id])
-  sectionId   BigInt?
+  section     Section                @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  sectionId   Int
   completions SubSectionCompletion[]
   questions   Question[]
   comments    Comment[]
 }
 
 model CourseProgress {
-  id          BigInt                 @id @default(autoincrement())
+  id          Int                    @id @default(autoincrement())
   userId      Int
-  courseId    BigInt
+  courseId    Int
   isCompleted Boolean                @default(false)
   user        User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   course      Course                 @relation(fields: [courseId], references: [id], onDelete: Cascade)
@@ -195,9 +198,9 @@ model CourseProgress {
 }
 
 model SubSectionCompletion {
-  id               BigInt         @id @default(autoincrement())
-  courseProgressId BigInt
-  subSectionId     BigInt
+  id               Int            @id @default(autoincrement())
+  courseProgressId Int
+  subSectionId     Int
   watchTime        Int            @default(0)
   isFinished       Boolean        @default(false)
   courseProgress   CourseProgress @relation(fields: [courseProgressId], references: [id], onDelete: Cascade)
@@ -220,18 +223,18 @@ model OTP {
 }
 
 model Question {
-  id            BigInt       @id @default(autoincrement())
+  id            Int          @id @default(autoincrement())
   question      String
   options       String[]
   correctOption String
   type          QuestionType
   marks         Int          @default(4)
-  subsectionId  BigInt?
-  subsection    SubSection?  @relation(fields: [subsectionId], references: [id])
+  subsectionId  Int?
+  subsection    SubSection?  @relation(fields: [subsectionId], references: [id], onDelete: Cascade)
   testId        String?
-  test          Test?        @relation(fields: [testId], references: [id])
+  test          Test?        @relation(fields: [testId], references: [id], onDelete: Cascade)
   quizId        String?
-  quiz          Quiz?        @relation(fields: [quizId], references: [id])
+  quiz          Quiz?        @relation(fields: [quizId], references: [id], onDelete: Cascade)
   createdAt     DateTime     @default(now())
   updateAt      DateTime     @updatedAt
 }
@@ -244,8 +247,8 @@ model Test {
   timeline    Int
   startTime   DateTime
   endTime     DateTime
-  sectionId   BigInt     @unique
-  section     Section    @relation(fields: [sectionId], references: [id])
+  sectionId   Int        @unique
+  section     Section    @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   questions   Question[]
   createdAt   DateTime   @default(now())
 }

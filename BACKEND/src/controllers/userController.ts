@@ -141,9 +141,7 @@ export const getUserDetails = async (req: UserRequest, res: Response) => {
         return res.status(StatusCodes.OK).json({
             success: true,
             message: "User Data Fetched",
-            data: {
-                ...user, points: Number(user.points)
-            }
+            data:user
         })
     } catch (error) {
         INTERNAL_SERVER_ERROR(res, error)

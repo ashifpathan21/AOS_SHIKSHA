@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE "OTP" ADD COLUMN     "sends" INTEGER NOT NULL DEFAULT 0;
