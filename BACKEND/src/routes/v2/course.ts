@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { authenticate, isInstructor, isItInstructorsCourse, isStudent, isStudentEnrolled } from "../../middlewares/authmiddleware.js";
-import { createCourse, deleteCourse, enrollIntoCourse, getAllCourseBasicDetails, getAllCoursesForInstructor, getCourseBasicDetails, getCourseDetailsForInstructor, getCourseDetailsForStudent, updateCourse } from "../../controllers/courseController.js";
+import { createCourse, deleteCourse, getAllCourseBasicDetails, getAllCoursesForInstructor, getCourseBasicDetails, getCourseDetailsForInstructor, getCourseDetailsForStudent, updateCourse } from "../../controllers/courseController.js";
 import { upload } from "../../utils/cloudinaryUpload.js";
+import { capturePayment, verifyPayment } from "../../controllers/paymentController.js";
 const router = Router()
 
 // create course
@@ -26,8 +27,11 @@ router.get('/details/instructor/:courseId', authenticate, isInstructor, isItInst
 // get all instructor course 
 router.get('/instructor', authenticate, isInstructor, getAllCoursesForInstructor)
 
-//enroll into a course 
-router.patch('/enroll/:courseId', authenticate, isStudent, enrollIntoCourse)
+//enroll into a course is price === 0 or create a payment instance 
+router.patch('/enroll/:courseId', authenticate, isStudent, capturePayment)
+
+// verify the payment
+router.patch('/enroll/verify/:courseId', authenticate, isStudent, verifyPayment)
 
 
 // get a single course basic details 

@@ -36,6 +36,7 @@
     "otp-generator": "^4.0.1",
     "play-dl": "^1.9.7",
     "prisma": "^7.8.0",
+    "razorpay": "^2.9.6",
     "zod": "^4.4.3"
   },
   "devDependencies": {
