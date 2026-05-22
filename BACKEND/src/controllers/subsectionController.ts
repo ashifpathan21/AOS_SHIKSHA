@@ -231,19 +231,7 @@ export const updateProgress = async (req: UserRequest, res: Response) => {
                     isFinished: Boolean(isFinished)
                 }
             })
-            if (isFinished) {
-                await prisma.user.update({
-                    where: {
-                        id: Number(req.user?.id),
-                        email: req.user?.email
-                    },
-                    data: {
-                        points: {
-                            increment: subsection.points
-                        }
-                    }
-                })
-            }
+            
         } else {
             const watchTime = progress.watchTime + parsedData.data.watchTime
             const isFinished = subsection.duration && (watchTime > subsection.duration - (subsection.duration / 10))
@@ -256,19 +244,6 @@ export const updateProgress = async (req: UserRequest, res: Response) => {
                     isFinished: Boolean(isFinished)
                 }
             })
-            if (isFinished && !progress.isFinished) {
-                await prisma.user.update({
-                    where: {
-                        id: Number(req.user?.id),
-                        email: req.user?.email
-                    },
-                    data: {
-                        points: {
-                            increment: subsection.points
-                        }
-                    }
-                })
-            }
         }
         await prisma.courseProgress.update({
             where: {

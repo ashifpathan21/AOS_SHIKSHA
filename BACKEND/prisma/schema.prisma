@@ -35,30 +35,33 @@ enum Status {
   UNLISTED
 }
 
-
 model User {
-  id               Int                @id @default(autoincrement())
-  name             String
-  username         String?
-  email            String
-  password         String?
-  accountType      AccountType        @default(STUDENT)
-  image            String?
-  imageId          String?
-  profile          Profile?
-  createdCourses   Course[]           @relation("CreatedCourses")
-  enrolledCourses  CourseEnrollment[]
-  courseProgress   CourseProgress[]
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  ratingAndReviews RatingAndReview[]
-  points           Int                @default(0)
-  socketId         String?
-  active           Boolean            @default(false)
-  followers        Follow[]           @relation("UserFollowers")
-  followings       Follow[]           @relation("UserFollowings")
-  posts            Post[]
-  comments         Comment[]
+  id                  Int                  @id @default(autoincrement())
+  name                String
+  username            String?
+  email               String
+  password            String?
+  accountType         AccountType          @default(STUDENT)
+  image               String?
+  imageId             String?
+  profile             Profile?
+  createdCourses      Course[]             @relation("CreatedCourses")
+  enrolledCourses     CourseEnrollment[]
+  courseProgress      CourseProgress[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  ratingAndReviews    RatingAndReview[]
+  socketId            String?
+  active              Boolean              @default(false)
+  followers           Follow[]             @relation("UserFollowers")
+  followings          Follow[]             @relation("UserFollowings")
+  posts               Post[]
+  comments            Comment[]
+  sendReplies         Reply[]              @relation("SentReplies")
+  receivedReplies     Reply[]              @relation("ReceivedReplies")
+  votes               Vote[]
+  likes               Like[]
+  questionSubmissions QuestionSubmission[]
 }
 
 model Content {
@@ -69,22 +72,38 @@ model Content {
   postId Int?
 }
 
+enum PostStatus {
+  PUBLIC
+  PROCESSING
+  PRIVATE
+}
+
 model Post {
-  id        Int       @id @default(autoincrement())
+  id        Int        @id @default(autoincrement())
   caption   String?
   content   Content[]
   createdBy Int
-  creater   User      @relation(fields: [createdBy], references: [id], onDelete: Cascade)
-  createdAt DateTime  @default(now())
+  status    PostStatus @default(PROCESSING)
+  creater   User       @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
   comments  Comment[]
+  likes     Like[]
+}
+
+model Like {
+  id     Int  @id @default(autoincrement())
+  by     User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId Int
+
+  @@unique([postId, userId])
 }
 
 model Comment {
   id           Int         @id @default(autoincrement())
   comment      String
-  parentId     Int?
-  parent       Comment?    @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies      Comment[]   @relation("CommentReplies")
+  replies      Reply[]
   postId       Int?
   post         Post?       @relation(fields: [postId], references: [id], onDelete: Cascade)
   subsectionId Int?
@@ -92,6 +111,35 @@ model Comment {
   commenterId  Int
   commenter    User        @relation(fields: [commenterId], references: [id], onDelete: Cascade)
   createdAt    DateTime    @default(now())
+  edited       Boolean     @default(false)
+  updatedAt    DateTime    @updatedAt
+  votes        Vote[]
+}
+
+model Vote {
+  id        Int      @id @default(autoincrement())
+  by        User     @relation(fields: [userId], references: [id])
+  type      VoteType
+  comment   Comment  @relation(fields: [commentId], references: [id])
+  userId    Int
+  commentId Int
+}
+
+enum VoteType {
+  UP
+  DOWN
+}
+
+model Reply {
+  id          Int      @id @default(autoincrement())
+  reply       String
+  to          User     @relation("ReceivedReplies", fields: [userId], references: [id])
+  userId      Int
+  by          User     @relation("SentReplies", fields: [commenterId], references: [id])
+  commenterId Int
+  comment     Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  commentId   Int?
+  createdAt   DateTime @default(now())
 }
 
 model Follow {
@@ -224,28 +272,38 @@ model OTP {
 }
 
 model Question {
-  id            Int          @id @default(autoincrement())
-  question      String
-  options       String[]
-  correctOption String
-  type          QuestionType
-  marks         Int          @default(4)
-  subsectionId  Int?
-  subsection    SubSection?  @relation(fields: [subsectionId], references: [id], onDelete: Cascade)
-  testId        String?
-  test          Test?        @relation(fields: [testId], references: [id], onDelete: Cascade)
-  quizId        String?
-  quiz          Quiz?        @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  createdAt     DateTime     @default(now())
-  updateAt      DateTime     @updatedAt
+  id                  Int                  @id @default(autoincrement())
+  question            String
+  options             String[]
+  correctOption       String
+  type                QuestionType
+  marks               Int                  @default(4)
+  subsectionId        Int?
+  subsection          SubSection?          @relation(fields: [subsectionId], references: [id], onDelete: Cascade)
+  testId              String?
+  test                Test?                @relation(fields: [testId], references: [id], onDelete: Cascade)
+  quizId              String?
+  quiz                Quiz?                @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  createdAt           DateTime             @default(now())
+  updateAt            DateTime             @updatedAt
+  questionSubmissions QuestionSubmission[]
+}
+
+model QuestionSubmission {
+  id         Int      @id @default(autoincrement())
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionId Int
+  isCorrect  Boolean
+  by         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int
 }
 
 model Test {
   id          String     @id @default(uuid())
   title       String
   description String?
-  guidlines   String[]
-  timeline    Int
+  guidelines  String[]
+  timeline    Int?
   startTime   DateTime
   endTime     DateTime
   sectionId   Int        @unique

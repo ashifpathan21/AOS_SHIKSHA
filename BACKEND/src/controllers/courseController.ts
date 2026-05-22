@@ -439,16 +439,9 @@ export const getCourseDetailsForStudent = async (
                                 },
 
                                 comments: {
-                                    where: {
-                                        parentId: null,
-                                    },
-
                                     orderBy: {
                                         createdAt: "desc",
                                     },
-
-                                    take: 20,
-
                                     select: {
                                         id: true,
                                         comment: true,
@@ -468,17 +461,21 @@ export const getCourseDetailsForStudent = async (
                                             },
 
                                             select: {
-                                                id: true,
-                                                comment: true,
-                                                createdAt: true,
-
-                                                commenter: {
+                                                by: {
                                                     select: {
                                                         id: true,
                                                         name: true,
-                                                        image: true,
-                                                    },
+                                                        image: true
+                                                    }
                                                 },
+                                                reply: true,
+                                                to: {
+                                                    select: {
+                                                        id: true,
+                                                        name: true,
+                                                        image: true
+                                                    }
+                                                }
                                             },
                                         },
                                     },
@@ -600,7 +597,7 @@ export const getCourseDetailsForInstructor = async (
                                 id: true,
                                 title: true,
                                 description: true,
-                                guidlines: true,
+                                guidelines: true,
                                 timeline: true,
                                 startTime: true,
                                 endTime: true,
@@ -660,16 +657,9 @@ export const getCourseDetailsForInstructor = async (
                                 },
 
                                 comments: {
-                                    where: {
-                                        parentId: null,
-                                    },
-
                                     orderBy: {
                                         createdAt: "desc",
                                     },
-
-                                    take: 50,
-
                                     select: {
                                         id: true,
                                         comment: true,
@@ -689,37 +679,21 @@ export const getCourseDetailsForInstructor = async (
                                             },
 
                                             select: {
-                                                id: true,
-                                                comment: true,
-                                                createdAt: true,
-
-                                                commenter: {
+                                                by: {
                                                     select: {
                                                         id: true,
                                                         name: true,
-                                                        image: true,
-                                                    },
+                                                        image: true
+                                                    }
                                                 },
-
-                                                replies: {
-                                                    orderBy: {
-                                                        createdAt: "asc",
-                                                    },
-
+                                                reply: true,
+                                                to: {
                                                     select: {
                                                         id: true,
-                                                        comment: true,
-                                                        createdAt: true,
-
-                                                        commenter: {
-                                                            select: {
-                                                                id: true,
-                                                                name: true,
-                                                                image: true,
-                                                            },
-                                                        },
-                                                    },
-                                                },
+                                                        name: true,
+                                                        image: true
+                                                    }
+                                                }
                                             },
                                         },
                                     },
@@ -833,7 +807,7 @@ export const getAllCoursesForInstructor = async (
                                 id: true,
                                 title: true,
                                 description: true,
-                                guidlines: true,
+                                guidelines: true,
                                 timeline: true,
                                 startTime: true,
                                 endTime: true,
@@ -893,16 +867,9 @@ export const getAllCoursesForInstructor = async (
                                 },
 
                                 comments: {
-                                    where: {
-                                        parentId: null,
-                                    },
-
                                     orderBy: {
                                         createdAt: "desc",
                                     },
-
-                                    take: 50,
-
                                     select: {
                                         id: true,
                                         comment: true,
@@ -922,37 +889,21 @@ export const getAllCoursesForInstructor = async (
                                             },
 
                                             select: {
-                                                id: true,
-                                                comment: true,
-                                                createdAt: true,
-
-                                                commenter: {
+                                                by: {
                                                     select: {
                                                         id: true,
                                                         name: true,
-                                                        image: true,
-                                                    },
+                                                        image: true
+                                                    }
                                                 },
-
-                                                replies: {
-                                                    orderBy: {
-                                                        createdAt: "asc",
-                                                    },
-
+                                                reply: true,
+                                                to: {
                                                     select: {
                                                         id: true,
-                                                        comment: true,
-                                                        createdAt: true,
-
-                                                        commenter: {
-                                                            select: {
-                                                                id: true,
-                                                                name: true,
-                                                                image: true,
-                                                            },
-                                                        },
-                                                    },
-                                                },
+                                                        name: true,
+                                                        image: true
+                                                    }
+                                                }
                                             },
                                         },
                                     },
@@ -981,6 +932,3 @@ export const getAllCoursesForInstructor = async (
         INTERNAL_SERVER_ERROR(res, error);
     }
 };
-
-
- 
