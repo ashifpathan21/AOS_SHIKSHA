@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticate, isInstructor, isStudent } from "../../middlewares/authmiddleware.js";
-import { createQuestion, deleteQuestion, updateQuestion } from "../../controllers/questionController.js";
+import { createQuestion, deleteQuestion, submitQuestion, updateQuestion } from "../../controllers/questionController.js";
 
 const router = Router();
 
@@ -13,7 +13,7 @@ router.patch('/:questionId', authenticate, isInstructor, updateQuestion)
 
 router.delete('/:questionId', authenticate, isInstructor, deleteQuestion)
 
-router.patch('/submit/:questionId', authenticate, isStudent)
+router.patch('/submit/:questionId', authenticate, isStudent , submitQuestion)
 
 
 

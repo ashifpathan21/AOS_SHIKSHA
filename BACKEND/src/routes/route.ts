@@ -6,12 +6,18 @@ import SubsectionRoutes from './v2/subsection.js'
 import QuestionRoutes from './v2/question.js'
 import CommentRoutes from './v2/comment.js'
 import PostRoutes from './v2/post.js'
+import ReviewRoutes from './v2/review.js'
+import FriendRoutes from './v2/friend.js'
+import TestRoutes from './v2/test.js'
 const router = Router()
 
+router.use('/user/friend', FriendRoutes)
 router.use('/user', UserRoutes)
 router.use('/comment', CommentRoutes)
 router.use('/post', PostRoutes)
+router.use('/course/review', ReviewRoutes)
 router.use('/course/section/subsection', SubsectionRoutes)
+router.use('/course/section/test', TestRoutes)
 router.use('/course/section', SectionRoutes)
 router.use('/course/question', QuestionRoutes)
 router.use('/course', CourseRoutes)

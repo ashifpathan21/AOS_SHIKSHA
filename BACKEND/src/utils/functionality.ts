@@ -10,3 +10,10 @@ export const INTERNAL_SERVER_ERROR = (res: Response, error: unknown) => {
         error: error
     })
 }
+
+export const INVALID_REQUEST = (res: Response) => {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Invalid Request"
+    })
+}

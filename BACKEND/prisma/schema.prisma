@@ -38,7 +38,7 @@ enum Status {
 model User {
   id                  Int                  @id @default(autoincrement())
   name                String
-  username            String?
+  username            String?              @unique
   email               String
   password            String?
   accountType         AccountType          @default(STUDENT)
@@ -62,6 +62,9 @@ model User {
   votes               Vote[]
   likes               Like[]
   questionSubmissions QuestionSubmission[]
+  testSubmissions     TestSubmission[]
+  sendMessages        Chat[]               @relation("SentMessage")
+  receivedMessages    Chat[]               @relation("ReceivedMessage")
 }
 
 model Content {
@@ -123,6 +126,8 @@ model Vote {
   comment   Comment  @relation(fields: [commentId], references: [id])
   userId    Int
   commentId Int
+
+  @@unique([userId, commentId])
 }
 
 enum VoteType {
@@ -137,17 +142,18 @@ model Reply {
   userId      Int
   by          User     @relation("SentReplies", fields: [commenterId], references: [id])
   commenterId Int
-  comment     Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
-  commentId   Int?
+  comment     Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  commentId   Int
   createdAt   DateTime @default(now())
 }
 
 model Follow {
-  id          Int  @id @default(autoincrement())
-  follower    User @relation("UserFollowings", fields: [followerId], references: [id], onDelete: Cascade)
-  followerId  Int
-  following   User @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
-  followingId Int
+  id             Int     @id @default(autoincrement())
+  follower       User    @relation("UserFollowings", fields: [followerId], references: [id], onDelete: Cascade)
+  followerId     Int
+  messageAllowed Boolean @default(false)
+  following      User    @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+  followingId    Int
 
   @@unique([followerId, followingId])
 }
@@ -290,26 +296,47 @@ model Question {
 }
 
 model QuestionSubmission {
-  id         Int      @id @default(autoincrement())
-  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  questionId Int
-  isCorrect  Boolean
-  by         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId     Int
+  id               Int             @id @default(autoincrement())
+  question         Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionId       Int
+  isCorrect        Boolean
+  marks            Int             @default(0)
+  by               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           Int
+  testSubmission   TestSubmission? @relation(fields: [testSubmissionId], references: [id])
+  testSubmissionId Int?
 }
 
 model Test {
-  id          String     @id @default(uuid())
-  title       String
-  description String?
-  guidelines  String[]
-  timeline    Int?
-  startTime   DateTime
-  endTime     DateTime
-  sectionId   Int        @unique
-  section     Section    @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  questions   Question[]
-  createdAt   DateTime   @default(now())
+  id              String           @id @default(uuid())
+  title           String
+  description     String?
+  guidelines      String[]
+  timeline        Int?
+  startTime       DateTime         @default(now())
+  endTime         DateTime?
+  status          TestStatus
+  sectionId       Int              @unique
+  section         Section          @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  questions       Question[]
+  createdAt       DateTime         @default(now())
+  testSubmissions TestSubmission[]
+}
+
+enum TestStatus {
+  LIVE
+  DRAFT
+}
+
+model TestSubmission {
+  id                  Int                  @id @default(autoincrement())
+  questionSubmissions QuestionSubmission[]
+  by                  User                 @relation(fields: [userId], references: [id])
+  userId              Int
+  test                Test                 @relation(fields: [testId], references: [id])
+  testId              String
+
+  @@unique([testId, userId])
 }
 
 enum Difficulty {
@@ -326,4 +353,13 @@ model Quiz {
   questions    Question[]
   difficulty   Difficulty
   createdAt    DateTime   @default(now())
+}
+
+model Chat {
+  id         Int    @id @default(autoincrement())
+  message    String
+  to         User   @relation("ReceivedMessage", fields: [receiverId], references: [id])
+  receiverId Int
+  by         User   @relation("SentMessage", fields: [senderId], references: [id])
+  senderId   Int
 }

@@ -1,6 +1,6 @@
 import type { Response } from "express";
 import type { UserRequest } from "../types/express/index.js";
-import { INTERNAL_SERVER_ERROR } from "../utils/functionality.js";
+import { INTERNAL_SERVER_ERROR, INVALID_REQUEST } from "../utils/functionality.js";
 import z from "zod";
 import { SectionSchema } from "../types/requestTypes/section.js";
 import { StatusCodes } from "http-status-codes";
@@ -11,18 +11,12 @@ export const createSection = async (req: UserRequest, res: Response) => {
     try {
         const { courseId } = req.params;
         if (!courseId) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Incomplete Fields"
-            })
+            return INVALID_REQUEST(res)
         }
         const data = req.body;
         const parsedData = z.safeParse(SectionSchema, data);
         if (!parsedData.success) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Incomplete Fields"
-            })
+            return  INVALID_REQUEST(res)
         }
         const section = await prisma.section.create({
             data: {
@@ -44,18 +38,12 @@ export const updateSection = async (req: UserRequest, res: Response) => {
     try {
         const { sectionId } = req.params;
         if (!sectionId) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Incomplete Fields"
-            })
+            return  INVALID_REQUEST(res)
         }
         const data = req.body;
         const parsedData = z.safeParse(SectionSchema, data)
         if (!parsedData.success) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Incomplete Fields"
-            })
+            return  INVALID_REQUEST(res)
         }
         const section = await prisma.section.update({
             where: {
@@ -91,10 +79,7 @@ export const deleteSection = async (req: UserRequest, res: Response) => {
     try {
         const { sectionId } = req.params
         if (!sectionId) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Incomplete Fields"
-            })
+            return  INVALID_REQUEST(res)
         }
 
         const deletedSection = await prisma.section.delete({

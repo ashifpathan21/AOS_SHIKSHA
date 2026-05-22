@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import type { UserRequest } from "../types/express/index.js";
-import { INTERNAL_SERVER_ERROR } from "../utils/functionality.js";
+import { INTERNAL_SERVER_ERROR, INVALID_REQUEST } from "../utils/functionality.js";
 import z, { file } from "zod";
 import { PostSchema } from "../types/requestTypes/post.js";
 import prisma from "../utils/db.js";
@@ -13,11 +13,8 @@ export const createPost = async (req: UserRequest, res: Response) => {
         const data = req.body;
         const parsedData = z.safeParse(PostSchema, data)
         const files = req.files as Express.Multer.File[] || undefined
-        if ((!files || !files.length) && !parsedData.success) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Incomplete fields"
-            })
+        if ((!files && !parsedData.data?.caption) && !parsedData.success) {
+            return INVALID_REQUEST(res)
         }
         const post = await prisma.post.create({
             data: {
@@ -73,10 +70,7 @@ export const updatePost = async (req: UserRequest, res: Response) => {
         const data = req.body;
         const parsedData = PostSchema.safeParse(data);
         if (!postId || !parsedData.success) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Invalid Request"
-            })
+            return INVALID_REQUEST(res)
         }
         const updatedPost = await prisma.post.update({
             where: {
@@ -111,10 +105,7 @@ export const deletePost = async (req: UserRequest, res: Response) => {
         const { postId } = req.params;
 
         if (!postId) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Invalid Request"
-            })
+            return INVALID_REQUEST(res)
         }
         const delPost = await prisma.post.delete({
             where: {

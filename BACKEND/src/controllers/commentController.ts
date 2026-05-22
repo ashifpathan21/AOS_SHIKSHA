@@ -1,7 +1,7 @@
 import type { Response } from "express";
 import type { UserRequest } from "../types/express/index.js";
-import { INTERNAL_SERVER_ERROR } from "../utils/functionality.js";
-import z from "zod";
+import { INTERNAL_SERVER_ERROR, INVALID_REQUEST } from "../utils/functionality.js";
+import z, { success } from "zod";
 import { CommentSchema, VoteSchema } from "../types/requestTypes/comment.js";
 import { StatusCodes } from "http-status-codes";
 import prisma from "../utils/db.js";
@@ -13,10 +13,7 @@ export const createComment = async (req: UserRequest, res: Response) => {
         const data = req.body;
         const parsedData = z.safeParse(CommentSchema, data)
         if (!parsedData.success || (!postId && !subsectionId) || (postId && subsectionId)) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Invalid Request"
-            })
+            return INVALID_REQUEST(res)
         }
         let comment;
         if (postId) {
@@ -26,10 +23,7 @@ export const createComment = async (req: UserRequest, res: Response) => {
                 }
             })
             if (!post) {
-                return res.status(StatusCodes.BAD_REQUEST).json({
-                    success: false,
-                    message: "Invalid Request"
-                })
+                return INVALID_REQUEST(res)
             }
             comment = await prisma.comment.create({
                 data: {
@@ -66,10 +60,7 @@ export const createComment = async (req: UserRequest, res: Response) => {
                 }
             })
             if (!subs) {
-                return res.status(StatusCodes.BAD_REQUEST).json({
-                    success: false,
-                    message: "Invalid Request"
-                })
+                return INVALID_REQUEST(res)
             }
             comment = await prisma.comment.create({
                 data: {
@@ -137,10 +128,7 @@ export const deleteComment = async (req: UserRequest, res: Response) => {
     try {
         const commentId = Number(req.params.commentId);
         if (!commentId) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Invalid Request"
-            })
+            return INVALID_REQUEST(res)
         }
         const deletedComment = await prisma.comment.delete({
             where: {
@@ -189,10 +177,7 @@ export const voteComment = async (req: UserRequest, res: Response) => {
         const parsedData = z.safeParse(VoteSchema, data)
         const commentId = Number(req.params.commentId)
         if (!commentId || !parsedData.success) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Invalid Request"
-            })
+            return INVALID_REQUEST(res)
         }
         const comment = await prisma.comment.findFirst({
             where: {
@@ -200,9 +185,23 @@ export const voteComment = async (req: UserRequest, res: Response) => {
             }
         })
         if (!comment) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
+            return INVALID_REQUEST(res)
+        }
+        const existingVote = await prisma.vote.findFirst({
+            where: {
+                by: {
+                    id: Number(req.user?.id),
+                    email: req.user?.email
+                },
+                comment: {
+                    id: comment.id
+                }
+            }
+        })
+        if (existingVote) {
+            return res.status(StatusCodes.CONFLICT).json({
                 success: false,
-                message: "Invalid Request"
+                message: "Already Voted"
             })
         }
         const vote = await prisma.vote.create({
@@ -221,3 +220,47 @@ export const voteComment = async (req: UserRequest, res: Response) => {
     }
 }
 
+export const unvoteComment = async (req: UserRequest, res: Response) => {
+    try {
+        const commentId = Number(req.params.commentId)
+        if (!commentId) {
+            return INVALID_REQUEST(res)
+        }
+        const comment = await prisma.comment.findFirst({
+            where: {
+                id: commentId
+            }
+        })
+        if (!comment) {
+            return INVALID_REQUEST(res)
+        }
+        const existingVote = await prisma.vote.findFirst({
+            where: {
+                by: {
+                    id: Number(req.user?.id),
+                    email: req.user?.email
+                },
+                comment: {
+                    id: comment.id
+                }
+            }
+        })
+        if (!existingVote) {
+            return res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Vote Not Found"
+            })
+        }
+        await prisma.vote.delete({
+            where: {
+                id: existingVote.id
+            }
+        })
+        return res.status(StatusCodes.NO_CONTENT).json({
+            success: true,
+            message: "Vote Removed"
+        })
+    } catch (error) {
+        INTERNAL_SERVER_ERROR(res, error)
+    }
+}

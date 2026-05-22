@@ -1,6 +1,6 @@
 import type { Response } from "express";
 import type { UserRequest } from "../types/express/index.js";
-import { INTERNAL_SERVER_ERROR } from "../utils/functionality.js";
+import { INTERNAL_SERVER_ERROR, INVALID_REQUEST } from "../utils/functionality.js";
 import { StatusCodes } from "http-status-codes";
 import prisma from "../utils/db.js";
 import z from "zod";
@@ -13,10 +13,7 @@ export const createSubsection = async (req: UserRequest, res: Response) => {
         const data = req.body
         const parsedData = z.safeParse(SubsectionSchema, data)
         if (!sectionId || !parsedData.success) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Please Provide SectionId"
-            })
+            return INVALID_REQUEST(res)
         }
         const section = await prisma.section.findFirst({
             where: {
@@ -67,10 +64,7 @@ export const updateSubsection = async (req: UserRequest, res: Response) => {
         const data = req.body
         const parsedData = z.safeParse(SubsectionSchema, data)
         if (!subsectionId || !parsedData.success) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Please Provide SectionId"
-            })
+            return  INVALID_REQUEST(res)
         }
         const { title, description, videoUrl, duration, points } = parsedData.data;
         let finalDuration = (!duration || duration < 0) ? null : duration;
@@ -116,10 +110,7 @@ export const deleteSubsection = async (req: UserRequest, res: Response) => {
     try {
         const { subsectionId } = req.params;
         if (!subsectionId) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Please Provide SectionId"
-            })
+            return  INVALID_REQUEST(res)
         }
         const subsection = await prisma.subSection.delete({
             where: {
@@ -156,10 +147,7 @@ export const updateProgress = async (req: UserRequest, res: Response) => {
         const data = req.body
         const parsedData = z.safeParse(ProgressSchema, data)
         if (!subsectionId || !parsedData.success) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Please Provide SectionId"
-            })
+            return  INVALID_REQUEST(res)
         }
         const subsection = await prisma.subSection.findFirst({
             where: {

@@ -10,7 +10,7 @@ import otpgenerator, { generate } from 'otp-generator'
 import mailSender from "../utils/mailer.js";
 import otpTemplate from "../mail/OTPVerification.js";
 import bcrypt from 'bcrypt'
-import { INTERNAL_SERVER_ERROR } from "../utils/functionality.js";
+import { INTERNAL_SERVER_ERROR, INVALID_REQUEST } from "../utils/functionality.js";
 import crypto from 'crypto'
 
 const otpExpiryMs = 5 * 60 * 1000
@@ -18,14 +18,9 @@ const otpLimitMs = 60 * 1000
 
 export const googleLogin = async (req: Request, res: Response) => {
     try {
-        console.log("Logiin")
         const { code } = req.query;
-        console.log(code)
         if (!code) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Invalid Request"
-            })
+            return INVALID_REQUEST(res)
         }
         const googleResponse = await oauthclient.getToken(code as string);
         oauthclient.setCredentials(googleResponse.tokens)
@@ -34,7 +29,8 @@ export const googleLogin = async (req: Request, res: Response) => {
         const { email, name, picture } = userResponse.data;
         let user = await prisma.user.findFirst({
             where: {
-                email: email
+                email: email,
+                accountType: "STUDENT"
             }
         })
         if (!user) {
@@ -43,7 +39,51 @@ export const googleLogin = async (req: Request, res: Response) => {
                     name: name,
                     email: email,
                     image: picture,
-                    imageId: picture
+                    imageId: picture,
+                    accountType: "STUDENT"
+                }
+            })
+        }
+        const token = signToken({
+            userId: user.id,
+            userEmail: user.email
+        })
+        return res.status(StatusCodes.ACCEPTED).json({
+            success: true,
+            message: "User Logged In",
+            token: token
+        })
+    } catch (error) {
+        INTERNAL_SERVER_ERROR(res, error)
+    }
+}
+
+
+export const googleLoginInstructor = async (req: Request, res: Response) => {
+    try {
+        const { code } = req.query;
+        if (!code) {
+            return INVALID_REQUEST(res)
+        }
+        const googleResponse = await oauthclient.getToken(code as string);
+        oauthclient.setCredentials(googleResponse.tokens)
+
+        const userResponse = await axios.get(`https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${googleResponse.tokens.access_token}`)
+        const { email, name, picture } = userResponse.data;
+        let user = await prisma.user.findFirst({
+            where: {
+                email: email,
+                accountType: "INSTRUCTOR"
+            }
+        })
+        if (!user) {
+            user = await prisma.user.create({
+                data: {
+                    name: name,
+                    email: email,
+                    image: picture,
+                    imageId: picture,
+                    accountType: "INSTRUCTOR"
                 }
             })
         }
@@ -66,11 +106,7 @@ export const signup = async (req: Request, res: Response) => {
         const data = req.body
         const parsedData = z.safeParse(SignupSchema, data);
         if (!parsedData.success) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                error: parsedData.error,
-                message: "Incomplete Fields"
-            })
+            return INVALID_REQUEST(res)
         }
         const user = await prisma.user.findFirst({
             where: {
@@ -160,11 +196,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
         const data = req.body
         const parsedData = z.safeParse(OTPSchema, data);
         if (!parsedData.success) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                error: parsedData.error,
-                message: "Incomplete Fields"
-            })
+            return INVALID_REQUEST(res)
         }
         const OTP = await prisma.oTP.findFirst({
             where: {
@@ -196,7 +228,8 @@ export const verifyOtp = async (req: Request, res: Response) => {
 
         const existingUser = await prisma.user.findFirst({
             where: {
-                email: OTP.email
+                email: OTP.email,
+                accountType: OTP.accountType
             }
         })
         if (existingUser) {
@@ -247,11 +280,7 @@ export const login = async (req: Request, res: Response) => {
         const data = req.body
         const parsedData = z.safeParse(LoginSchema, data)
         if (!parsedData.success) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                error: parsedData.error,
-                message: "Incomplete Fields"
-            })
+            return INVALID_REQUEST(res)
         }
         const user = await prisma.user.findFirst({
             where: {
@@ -267,7 +296,7 @@ export const login = async (req: Request, res: Response) => {
         if (!user.password) {
             return res.status(StatusCodes.CONFLICT).json({
                 success: false,
-                message: "Try Login with Google"
+                message: "Try Login with Google or reset your psssword"
             })
         }
         const isMatch = await bcrypt.compare(`${parsedData.data.email}${parsedData.data.password}`, user.password);
@@ -296,11 +325,7 @@ export const resetPasswordRequest = async (req: Request, res: Response) => {
         const data = req.body;
         const parsedData = z.safeParse(ResetPasswordRequestSchema, data);
         if (!parsedData.success) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                error: parsedData.error,
-                message: "Incomplete Fields"
-            })
+            return INVALID_REQUEST(res)
         }
         const user = await prisma.user.findFirst({
             where: {
@@ -385,11 +410,7 @@ export const resetPassword = async (req: Request, res: Response) => {
         const data = req.body;
         const parsedData = z.safeParse(ResetPasswordSchema, data);
         if (!parsedData.success) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                error: parsedData.error,
-                message: "Incomplete Fields"
-            })
+            return INVALID_REQUEST(res)
         }
         const user = await prisma.user.findFirst({
             where: {
