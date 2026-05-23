@@ -88,7 +88,8 @@ export const createQuestion = async (req: UserRequest, res: Response) => {
         }
         return res.status(StatusCodes.CREATED).json({
             success: true,
-            message: "Question Created Successfully"
+            message: "Question Created Successfully",
+            data: q
         })
     } catch (error) {
         INTERNAL_SERVER_ERROR(res, error)
@@ -102,6 +103,43 @@ export const updateQuestion = async (req: UserRequest, res: Response) => {
         const parsedData = z.safeParse(QuestionSchema, data)
         if (!questionId || !parsedData.data) {
             return INVALID_REQUEST(res)
+        }
+        const q = await prisma.question.findFirst({
+            where: {
+                id: questionId,
+                OR: [
+                    {
+                        subsection: {
+                            section: {
+                                course: {
+                                    instructor: {
+                                        id: Number(req.user?.id),
+                                        email: req.user?.email
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    {
+                        test: {
+                            section: {
+                                course: {
+                                    instructor: {
+                                        id: Number(req.user?.id),
+                                        email: req.user?.email
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ]
+            },
+        })
+        if (!q) {
+            return res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Question Not Found"
+            })
         }
         const { question, type, correctOption, marks, options } = parsedData.data
         if (type === "MCQ" && (options?.length !== 4 || !options?.includes(correctOption))) {
@@ -138,23 +176,18 @@ export const updateQuestion = async (req: UserRequest, res: Response) => {
                 ]
             },
             data: {
-                question,
-                type,
-                options,
-                correctOption,
-                marks
+                question: question || q.question,
+                type: type || q.type,
+                options: options || q.options,
+                correctOption: correctOption || q.correctOption,
+                marks: marks || q.marks
             }
         })
 
-        if (!updatedQuestion) {
-            return res.status(StatusCodes.NOT_FOUND).json({
-                success: false,
-                message: "Question Not Found"
-            })
-        }
         return res.status(StatusCodes.OK).json({
             success: true,
-            message: "Question Updated Successfully"
+            message: "Question Updated Successfully",
+            data: updatedQuestion
         })
     } catch (error) {
         INTERNAL_SERVER_ERROR(res, error)

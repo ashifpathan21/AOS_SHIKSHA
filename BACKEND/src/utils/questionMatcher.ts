@@ -9,7 +9,7 @@ async function checkSemanticMatch(correctAnswer: string, userAnswer: string) {
         const output1 = await extractor(correctAnswer, { pooling: 'mean', normalize: true });
         const output2 = await extractor(userAnswer, { pooling: 'mean', normalize: true });
         const similarity = cos_sim(output1.tolist(), output2.tolist());
-        return similarity >= 0.80;
+        return similarity >= 0.60;
     } catch (error) {
         return false
     }
