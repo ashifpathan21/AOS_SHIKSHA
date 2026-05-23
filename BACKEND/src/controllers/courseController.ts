@@ -9,7 +9,6 @@ import prisma from "../utils/db.js";
 
 export const createCourse = async (req: UserRequest, res: Response) => {
     try {
-        console.log(req.body)
         const data = req.body;
 
         const parsedData = z.safeParse(CourseSchema, { ...data, price: Number(data.price || 0) });
@@ -173,7 +172,7 @@ export const deleteCourse = async (req: UserRequest, res: Response) => {
 
 export const getCourseBasicDetails = async (req: Request, res: Response) => {
     try {
-        const { courseId: id } = req.params;
+        const id = req.params.courseId;
         if (!id) {
             return res.status(StatusCodes.BAD_REQUEST).json({
                 success: false,
@@ -268,8 +267,11 @@ export const getAllCourseBasicDetails = async (req: Request, res: Response) => {
                 },
                 ratingAndReviews: {
                     select: {
+                        rating: true,
+                        review: true,
                         user: {
                             select: {
+                                id: true,
                                 name: true,
                                 image: true
                             }
@@ -291,6 +293,7 @@ export const getAllCourseBasicDetails = async (req: Request, res: Response) => {
                         }
                     }
                 },
+
                 _count: {
                     select: {
                         studentsEnrolled: true
@@ -332,7 +335,7 @@ export const getCourseDetailsForStudent = async (
             });
         }
 
-        const course = await prisma.course.findFirst({
+        const course = await prisma.course.findFirstOrThrow({
             where: {
                 id: courseId,
                 status: "PUBLIC",

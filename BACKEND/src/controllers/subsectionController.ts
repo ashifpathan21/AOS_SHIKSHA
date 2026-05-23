@@ -64,14 +64,33 @@ export const updateSubsection = async (req: UserRequest, res: Response) => {
         const data = req.body
         const parsedData = z.safeParse(SubsectionSchema, data)
         if (!subsectionId || !parsedData.success) {
-            return  INVALID_REQUEST(res)
+            return INVALID_REQUEST(res)
         }
         const { title, description, videoUrl, duration, points } = parsedData.data;
         let finalDuration = (!duration || duration < 0) ? null : duration;
         if (videoUrl && !finalDuration) {
             finalDuration = await getYoutubeVideoDuration(videoUrl)
         }
-        const subsection = await prisma.subSection.update({
+        const subsection = await prisma.subSection.findFirst({
+            where: {
+                id: Number(subsectionId),
+                section: {
+                    course: {
+                        instructor: {
+                            id: Number(req.user?.id),
+                            email: req.user?.email
+                        }
+                    }
+                }
+            }
+        })
+        if (!subsection) {
+            return res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Subsection Not Found"
+            })
+        }
+        await prisma.subSection.update({
             where: {
                 id: Number(subsectionId),
                 section: {
@@ -84,19 +103,13 @@ export const updateSubsection = async (req: UserRequest, res: Response) => {
                 }
             },
             data: {
-                title: title,
-                description: description,
-                videoUrl: videoUrl || null,
-                duration: finalDuration,
-                points: points || 2,
+                title: title || subsection.title,
+                description: description || subsection.description,
+                videoUrl: videoUrl || subsection.videoUrl,
+                duration: finalDuration || subsection.duration,
+                points: points || subsection.points,
             }
         })
-        if (!subsection) {
-            return res.status(StatusCodes.NOT_FOUND).json({
-                success: false,
-                message: "Subsection Not Found"
-            })
-        }
         return res.status(StatusCodes.OK).json({
             success: false,
             message: "Subsection Updated Successfully"
@@ -110,9 +123,9 @@ export const deleteSubsection = async (req: UserRequest, res: Response) => {
     try {
         const { subsectionId } = req.params;
         if (!subsectionId) {
-            return  INVALID_REQUEST(res)
+            return INVALID_REQUEST(res)
         }
-        const subsection = await prisma.subSection.delete({
+        const subsection = await prisma.subSection.findFirst({
             where: {
                 id: Number(subsectionId),
                 section: {
@@ -131,6 +144,19 @@ export const deleteSubsection = async (req: UserRequest, res: Response) => {
                 message: "Subsection Not Found"
             })
         }
+        await prisma.subSection.delete({
+            where: {
+                id: Number(subsectionId),
+                section: {
+                    course: {
+                        instructor: {
+                            id: Number(req.user?.id),
+                            email: req.user?.email
+                        }
+                    }
+                }
+            }
+        })
         return res.status(StatusCodes.NO_CONTENT).json({
             success: false,
             message: "Subsection Deleted Successfully"
@@ -147,7 +173,7 @@ export const updateProgress = async (req: UserRequest, res: Response) => {
         const data = req.body
         const parsedData = z.safeParse(ProgressSchema, data)
         if (!subsectionId || !parsedData.success) {
-            return  INVALID_REQUEST(res)
+            return INVALID_REQUEST(res)
         }
         const subsection = await prisma.subSection.findFirst({
             where: {
@@ -219,7 +245,7 @@ export const updateProgress = async (req: UserRequest, res: Response) => {
                     isFinished: Boolean(isFinished)
                 }
             })
-            
+
         } else {
             const watchTime = progress.watchTime + parsedData.data.watchTime
             const isFinished = subsection.duration && (watchTime > subsection.duration - (subsection.duration / 10))
@@ -233,7 +259,7 @@ export const updateProgress = async (req: UserRequest, res: Response) => {
                 }
             })
         }
-        await prisma.courseProgress.update({
+        const coursePr = await prisma.courseProgress.update({
             where: {
                 id: courseProgress.id,
                 completions: {
@@ -244,11 +270,24 @@ export const updateProgress = async (req: UserRequest, res: Response) => {
             },
             data: {
                 isCompleted: true
+            },
+            select: {
+                id: true,
+                isCompleted: true,
+                completions: {
+                    select: {
+                        isFinished: true,
+                        watchTime: true,
+                        id: true,
+                        subSectionId: true
+                    }
+                }
             }
         })
         return res.status(StatusCodes.OK).json({
             success: true,
-            message: "Progress Saved"
+            message: "Progress Saved",
+            data: coursePr
         })
     } catch (error) {
         INTERNAL_SERVER_ERROR(res, error)

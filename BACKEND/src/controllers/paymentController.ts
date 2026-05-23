@@ -44,7 +44,7 @@ export const capturePayment = async (req: UserRequest, res: Response) => {
             })
         }
         if (course.price === null || !course.price || course.price === 0) {
-            enrollIntoCourse(req, res, Number(courseId))
+           return enrollIntoCourse(req, res, Number(courseId))
         }
         const options = {
             amount: Number(course.price) * 100,

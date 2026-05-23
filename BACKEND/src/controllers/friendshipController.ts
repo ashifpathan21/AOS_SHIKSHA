@@ -3,6 +3,9 @@ import type { UserRequest } from "../types/express/index.js";
 import { INTERNAL_SERVER_ERROR, INVALID_REQUEST } from "../utils/functionality.js";
 import { StatusCodes } from "http-status-codes";
 import prisma from "../utils/db.js";
+import { io } from "../index.js";
+
+// follow event 
 
 export const follow = async (req: UserRequest, res: Response) => {
     try {
@@ -57,12 +60,27 @@ export const follow = async (req: UserRequest, res: Response) => {
                     messageAllowed: true
                 }
             })
-        await prisma.follow.create({
+        const follow = await prisma.follow.create({
             data: {
                 followerId: Number(req.user?.id),
                 followingId: Number(userId),
                 messageAllowed
+            },
+            select: {
+                id: true,
+                follower: {
+                    select: {
+                        id: true,
+                        image: true,
+                        name: true,
+                        username: true
+                    }
+                }
             }
+        })
+
+        io.to(`user:${userId}`).emit("follow", {
+            by: follow.follower
         })
         return res.status(StatusCodes.CREATED).json({
             success: true,
@@ -133,7 +151,21 @@ export const allowToMessage = async (req: UserRequest, res: Response) => {
                 message: "User Not Found"
             })
         }
-        const isUserFollowsMe = await prisma.follow.update({
+        const isUserFollowsMe = await prisma.follow.findUnique({
+            where: {
+                followerId_followingId: {
+                    followerId: Number(userId),
+                    followingId: Number(req.user?.id)
+                }
+            }
+        })
+        if (!isUserFollowsMe) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "User not follows you"
+            })
+        }
+        await prisma.follow.update({
             where: {
                 followerId_followingId: {
                     followerId: Number(userId),
@@ -144,12 +176,6 @@ export const allowToMessage = async (req: UserRequest, res: Response) => {
                 messageAllowed: true
             }
         })
-        if (!isUserFollowsMe) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "User not follows you"
-            })
-        }
         return res.status(StatusCodes.OK).json({
             success: true,
             message: "Request Approved"

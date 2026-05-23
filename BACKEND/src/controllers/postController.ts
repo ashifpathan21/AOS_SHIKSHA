@@ -6,7 +6,10 @@ import { PostSchema } from "../types/requestTypes/post.js";
 import prisma from "../utils/db.js";
 import { deleteFromCloudinary, uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 import { StatusCodes } from "http-status-codes";
+import { io } from "../index.js";
 
+
+// like-post event
 
 export const createPost = async (req: UserRequest, res: Response) => {
     try {
@@ -72,7 +75,7 @@ export const updatePost = async (req: UserRequest, res: Response) => {
         if (!postId || !parsedData.success) {
             return INVALID_REQUEST(res)
         }
-        const updatedPost = await prisma.post.update({
+        const post = await prisma.post.findFirst({
             where: {
                 id: Number(postId),
                 status: "PUBLIC",
@@ -80,17 +83,22 @@ export const updatePost = async (req: UserRequest, res: Response) => {
                     id: Number(req.user?.id),
                     email: req.user?.email
                 }
-            },
-            data: {
-                caption: parsedData.data.caption
             }
         })
-        if (!updatedPost) {
+        if (!post) {
             return res.status(StatusCodes.NOT_FOUND).json({
                 success: false,
                 message: "Post not found"
             })
         }
+        await prisma.post.update({
+            where: {
+                id: post.id
+            },
+            data: {
+                caption: parsedData.data.caption
+            }
+        })
         return res.status(StatusCodes.OK).json({
             success: true,
             message: "Post Updated Successfully"
@@ -150,6 +158,37 @@ export const userAllPost = async (req: UserRequest, res: Response) => {
                 }
             },
             select: {
+                id: true,
+                _count: {
+                    select: {
+                        likes: true,
+                        comments: true
+                    }
+                },
+                caption: true,
+                content: {
+                    select: {
+                        url: true,
+                    },
+                    orderBy: {
+                        id: "asc"
+                    },
+                },
+                likes: {
+                    select: {
+                        by: {
+                            select: {
+                                id: true,
+                                image: true,
+                                name: true,
+                                username: true
+                            }
+                        }
+                    },
+                    orderBy: {
+                        id: "desc"
+                    },
+                },
                 comments: {
                     select: {
                         comment: true,
@@ -157,7 +196,8 @@ export const userAllPost = async (req: UserRequest, res: Response) => {
                             select: {
                                 id: true,
                                 image: true,
-                                name: true
+                                name: true,
+                                username: true
                             }
                         },
                         edited: true,
@@ -167,22 +207,30 @@ export const userAllPost = async (req: UserRequest, res: Response) => {
                                     select: {
                                         id: true,
                                         image: true,
-                                        name: true
+                                        name: true,
+                                        username: true
                                     }
                                 },
                                 to: {
                                     select: {
                                         id: true,
                                         image: true,
-                                        name: true
+                                        name: true,
+                                        username: true
                                     }
                                 },
                                 reply: true,
                                 id: true
                             }
                         }
-                    }
+                    },
+                    orderBy: {
+                        id: 'desc'
+                    },
                 }
+            },
+            orderBy: {
+                id: 'asc'
             }
         })
         if (!posts) {
@@ -210,7 +258,7 @@ export const getAPost = async (req: Request, res: Response) => {
                 message: "Post Id is missing"
             })
         }
-        const post = await prisma.post.findUnique({
+        const post = await prisma.post.findFirst({
             where: {
                 id: Number(postId),
                 status: "PUBLIC"
@@ -253,11 +301,40 @@ export const likeAPost = async (req: UserRequest, res: Response) => {
                 message: "Post not Found "
             })
         }
+        const exLike = await prisma.like.findUnique({
+            where: {
+                postId_userId: {
+                    userId: Number(req.user?.id),
+                    postId: Number(postId)
+                }
+            }
+        })
+        if (exLike) {
+            return res.status(StatusCodes.CONFLICT).json({
+                success: false,
+                message: "Already Liked"
+            })
+        }
         const like = await prisma.like.create({
             data: {
                 userId: Number(req.user?.id),
                 postId: Number(postId)
+            },
+            select: {
+                id: true,
+                by: {
+                    select: {
+                        id: true,
+                        name: true,
+                        username: true,
+                        image: true
+                    }
+                }
             }
+        })
+        io.to(`user:${post.createdBy}`).emit("like-post", {
+            postId: post.id,
+            by: like.by
         })
         return res.status(StatusCodes.CREATED).json({
             success: true,

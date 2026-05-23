@@ -137,7 +137,6 @@ export const getUserDetails = async (req: UserRequest, res: Response) => {
                 votes: true,
                 createdCourses: true,
                 enrolledCourses: true,
-                points: true,
                 followers: true,
                 followings: true,
                 email: true,

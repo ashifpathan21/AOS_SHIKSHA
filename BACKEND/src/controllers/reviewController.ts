@@ -4,6 +4,9 @@ import { INTERNAL_SERVER_ERROR, INVALID_REQUEST } from "../utils/functionality.j
 import { ReviewSchema } from "../types/requestTypes/review.js";
 import { StatusCodes } from "http-status-codes";
 import prisma from "../utils/db.js";
+import { io } from "../index.js";
+
+// review event
 
 
 export const addReview = async (req: UserRequest, res: Response) => {
@@ -54,8 +57,39 @@ export const addReview = async (req: UserRequest, res: Response) => {
                 rating,
                 courseId: course.id,
                 userId: Number(req.user?.id)
+            },
+            select: {
+                id: true,
+                course: {
+                    select: {
+                        name: true,
+                        thumbnail: true,
+                        instructor: {
+                            select: {
+                                id: true,
+                                name: true,
+                                username: true,
+                                image: true
+                            }
+                        }
+                    }
+                },
+                rating: true,
+                review: true,
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        username: true,
+                        image: true
+                    }
+                }
+
             }
         })
+
+        io.to(`user:${rev.course.instructor.id}`).emit("review", rev)
+
         return res.status(StatusCodes.CREATED).json({
             success: true,
             message: "Thanks for Review",

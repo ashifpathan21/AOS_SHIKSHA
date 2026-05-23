@@ -4,6 +4,9 @@ import { INTERNAL_SERVER_ERROR, INVALID_REQUEST } from "../utils/functionality.j
 import { ReplySchema } from "../types/requestTypes/comment.js";
 import { StatusCodes } from "http-status-codes";
 import prisma from "../utils/db.js";
+import { io } from "../index.js";
+
+// reply event
 
 export const addReply = async (req: UserRequest, res: Response) => {
     try {
@@ -33,8 +36,36 @@ export const addReply = async (req: UserRequest, res: Response) => {
                 commenterId: Number(req.user?.id),
                 commentId: Number(commentId),
                 userId: user.id
+            },
+            select: {
+                id: true,
+                by: {
+                    select: {
+                        id: true,
+                        name: true,
+                        username: true,
+                        image: true
+                    }
+                },
+                reply: true,
+                comment: {
+                    select: {
+                        comment: true,
+                        commenter: {
+                            select: {
+                                id: true,
+                                name: true,
+                                username: true,
+                                image: true
+                            }
+                        }
+                    }
+                }
             }
         })
+        io.to(`user:${user.id}`).emit("reply",
+            replied
+        )
         return res.status(StatusCodes.CREATED).json({
             success: true,
             message: "Replied Successfully",

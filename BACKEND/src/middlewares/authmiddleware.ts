@@ -1,9 +1,9 @@
-import type { NextFunction,  Response } from "express";
+import type { NextFunction, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { decodeToken } from "../utils/jwt.js";
 import prisma from "../utils/db.js";
 import type { UserRequest } from "../types/express/index.js";
-import { INTERNAL_SERVER_ERROR } from "../utils/functionality.js";
+import { INTERNAL_SERVER_ERROR, INVALID_REQUEST } from "../utils/functionality.js";
 
 
 export const authenticate = async (req: UserRequest, res: Response, next: NextFunction) => {
@@ -43,11 +43,7 @@ export const authenticate = async (req: UserRequest, res: Response, next: NextFu
         };
         next()
     } catch (error) {
-        console.log(error)
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-            success: false,
-            message: "Internal Server Error"
-        })
+        INTERNAL_SERVER_ERROR(res, error)
     }
 }
 
@@ -112,7 +108,10 @@ export const isInstructor = async (req: UserRequest, res: Response, next: NextFu
 
 export const isStudentEnrolled = async (req: UserRequest, res: Response, next: NextFunction) => {
     try {
-        const { id } = req.params;
+        const id = req.params.courseId;
+        if (!id) {
+            return INVALID_REQUEST(res)
+        }
         const course = await prisma.course.findFirst({
             where: {
                 id: Number(id),

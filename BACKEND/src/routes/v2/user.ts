@@ -28,6 +28,6 @@ router.post('/password/reset/request', resetPasswordRequest)
 
 router.patch('/password/reset', resetPassword)
 
-router.patch('/password/change', changePassword)
+router.patch('/password/change', authenticate, changePassword)
 
 export default router;

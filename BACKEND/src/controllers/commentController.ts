@@ -5,7 +5,10 @@ import z, { success } from "zod";
 import { CommentSchema, VoteSchema } from "../types/requestTypes/comment.js";
 import { StatusCodes } from "http-status-codes";
 import prisma from "../utils/db.js";
+import { io } from "../index.js";
 
+
+//ws events --->  comment , vote-comment 
 
 export const createComment = async (req: UserRequest, res: Response) => {
     try {
@@ -30,7 +33,24 @@ export const createComment = async (req: UserRequest, res: Response) => {
                     postId: post.id,
                     comment: parsedData.data.comment,
                     commenterId: Number(req.user?.id),
+                },
+                select: {
+                    id: true,
+                    comment: true,
+                    commenter: {
+                        select: {
+                            name: true,
+                            id: true,
+                            image: true,
+                            username: true
+                        }
+                    }
                 }
+            })
+            io.to(`user:${post.createdBy}`).emit("comment", {
+                postId: post.id,
+                comment: comment.comment,
+                by: comment.commenter
             })
         } else if (subsectionId) {
             const subs = await prisma.subSection.findFirst({
@@ -57,6 +77,18 @@ export const createComment = async (req: UserRequest, res: Response) => {
                             ]
                         }
                     }
+                },
+                select: {
+                    id: true,
+                    section: {
+                        select: {
+                            course: {
+                                select: {
+                                    instructor: true
+                                }
+                            }
+                        }
+                    }
                 }
             })
             if (!subs) {
@@ -67,7 +99,24 @@ export const createComment = async (req: UserRequest, res: Response) => {
                     subsectionId: subs.id,
                     comment: parsedData.data.comment,
                     commenterId: Number(req.user?.id),
+                },
+                select: {
+                    id: true,
+                    comment: true,
+                    commenter: {
+                        select: {
+                            name: true,
+                            id: true,
+                            image: true,
+                            username: true
+                        }
+                    }
                 }
+            })
+            io.to(`user:${subs.section.course.instructor.id}`).emit("comment", {
+                subsectionId: subs.id,
+                comment: comment.comment,
+                by: comment.commenter
             })
         }
         if (!comment) {
@@ -209,7 +258,21 @@ export const voteComment = async (req: UserRequest, res: Response) => {
                 userId: Number(req.user?.id),
                 commentId: comment.id,
                 type: parsedData.data.type
+            },
+            select: {
+                by: {
+                    select: {
+                        name: true,
+                        id: true,
+                        image: true,
+                        username: true
+                    }
+                }
             }
+        })
+        io.to(`user:${comment.commenterId}`).emit("vote-comment", {
+            type: parsedData.data.type,
+            voter: vote.by
         })
         return res.status(StatusCodes.CREATED).json({
             success: true,

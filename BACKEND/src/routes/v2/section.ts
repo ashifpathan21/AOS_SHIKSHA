@@ -1,6 +1,6 @@
 import { Router } from "express"
-import { authenticate, isInstructor, isItInstructorsCourse } from "../../middlewares/authmiddleware.js"
-import { createSection, deleteSection, updateSection } from "../../controllers/sectionController.js"
+import { authenticate, isInstructor, isItInstructorsCourse, isStudent, isStudentEnrolled } from "../../middlewares/authmiddleware.js"
+import { createSection, deleteSection, getAllSections, updateSection } from "../../controllers/sectionController.js"
 
 const router = Router()
 
@@ -12,5 +12,9 @@ router.patch("/:sectionId", authenticate, isInstructor, updateSection)
 
 // delete a section
 router.delete("/:sectionId", authenticate, isInstructor, deleteSection)
+
+
+// get all section authenticate 
+router.get('/:courseId', authenticate, getAllSections)
 
 export default router
