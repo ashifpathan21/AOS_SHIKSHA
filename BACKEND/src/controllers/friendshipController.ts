@@ -15,7 +15,7 @@ export const follow = async (req: UserRequest, res: Response) => {
                 id: Number(userId)
             }
         })
-        if (!user) {
+        if (!user || user.id === req.user?.id) {
             return res.status(StatusCodes.NOT_FOUND).json({
                 success: false,
                 message: "User Not Found"
@@ -35,18 +35,28 @@ export const follow = async (req: UserRequest, res: Response) => {
                 message: "Already Followed"
             })
         }
-        const isUserFollowsMe = await prisma.follow.update({
+        const isUserFollowsMe = await prisma.follow.findUnique({
             where: {
                 followerId_followingId: {
                     followerId: Number(userId),
                     followingId: Number(req.user?.id)
                 }
-            },
-            data: {
-                messageAllowed: true
             }
         })
-        const messageAllowed = Boolean(isUserFollowsMe.id)
+
+        const messageAllowed = Boolean(isUserFollowsMe?.id)
+        if (isUserFollowsMe)
+            await prisma.follow.update({
+                where: {
+                    followerId_followingId: {
+                        followerId: Number(userId),
+                        followingId: Number(req.user?.id)
+                    }
+                },
+                data: {
+                    messageAllowed: true
+                }
+            })
         await prisma.follow.create({
             data: {
                 followerId: Number(req.user?.id),
@@ -72,10 +82,11 @@ export const unfollow = async (req: UserRequest, res: Response) => {
         }
         const user = await prisma.user.findUnique({
             where: {
-                id: Number(userId)
+                id: Number(userId),
+
             }
         })
-        if (!user) {
+        if (!user || user.id === req.user?.id) {
             return res.status(StatusCodes.NOT_FOUND).json({
                 success: false,
                 message: "User Not Found"

@@ -51,8 +51,6 @@ model User {
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   ratingAndReviews    RatingAndReview[]
-  socketId            String?
-  active              Boolean              @default(false)
   followers           Follow[]             @relation("UserFollowers")
   followings          Follow[]             @relation("UserFollowings")
   posts               Post[]
@@ -65,6 +63,7 @@ model User {
   testSubmissions     TestSubmission[]
   sendMessages        Chat[]               @relation("SentMessage")
   receivedMessages    Chat[]               @relation("ReceivedMessage")
+  socketSession       SocketSession[]
 }
 
 model Content {
@@ -89,16 +88,18 @@ model Post {
   status    PostStatus @default(PROCESSING)
   creater   User       @relation(fields: [createdBy], references: [id], onDelete: Cascade)
   createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   comments  Comment[]
   likes     Like[]
 }
 
 model Like {
-  id     Int  @id @default(autoincrement())
-  by     User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId Int
-  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId Int
+  id        Int      @id @default(autoincrement())
+  by        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    Int
+  createdAt DateTime @default(now())
 
   @@unique([postId, userId])
 }
@@ -126,6 +127,7 @@ model Vote {
   comment   Comment  @relation(fields: [commentId], references: [id])
   userId    Int
   commentId Int
+  createdAt DateTime @default(now())
 
   @@unique([userId, commentId])
 }
@@ -145,15 +147,27 @@ model Reply {
   comment     Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
   commentId   Int
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SocketSession {
+  id        Int      @id @default(autoincrement())
+  socketId  String   @unique
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, socketId])
 }
 
 model Follow {
-  id             Int     @id @default(autoincrement())
-  follower       User    @relation("UserFollowings", fields: [followerId], references: [id], onDelete: Cascade)
+  id             Int      @id @default(autoincrement())
+  follower       User     @relation("UserFollowings", fields: [followerId], references: [id], onDelete: Cascade)
   followerId     Int
-  messageAllowed Boolean @default(false)
-  following      User    @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+  messageAllowed Boolean  @default(false)
+  following      User     @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
   followingId    Int
+  createdAt      DateTime @default(now())
 
   @@unique([followerId, followingId])
 }
@@ -191,13 +205,15 @@ model Course {
 }
 
 model RatingAndReview {
-  id       Int    @id @default(autoincrement())
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId   Int
-  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  courseId Int
-  review   String
-  rating   Int
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId  Int
+  review    String
+  rating    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([userId, courseId])
 }
@@ -220,6 +236,8 @@ model Section {
   course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
   courseId    Int
   test        Test?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
 model SubSection {
@@ -261,6 +279,7 @@ model SubSectionCompletion {
   courseProgress   CourseProgress @relation(fields: [courseProgressId], references: [id], onDelete: Cascade)
   subSection       SubSection     @relation(fields: [subSectionId], references: [id], onDelete: Cascade)
   updatedAt        DateTime       @updatedAt
+  createdAt        DateTime       @default(now())
 
   @@unique([courseProgressId, subSectionId])
 }
@@ -305,6 +324,7 @@ model QuestionSubmission {
   userId           Int
   testSubmission   TestSubmission? @relation(fields: [testSubmissionId], references: [id])
   testSubmissionId Int?
+  createdAt        DateTime        @default(now())
 }
 
 model Test {
@@ -335,6 +355,7 @@ model TestSubmission {
   userId              Int
   test                Test                 @relation(fields: [testId], references: [id])
   testId              String
+  createdAt           DateTime             @default(now())
 
   @@unique([testId, userId])
 }
@@ -356,10 +377,13 @@ model Quiz {
 }
 
 model Chat {
-  id         Int    @id @default(autoincrement())
+  id         Int       @id @default(autoincrement())
   message    String
-  to         User   @relation("ReceivedMessage", fields: [receiverId], references: [id])
+  to         User      @relation("ReceivedMessage", fields: [receiverId], references: [id])
   receiverId Int
-  by         User   @relation("SentMessage", fields: [senderId], references: [id])
+  by         User      @relation("SentMessage", fields: [senderId], references: [id])
   senderId   Int
+  isSeen     Boolean   @default(false)
+  seenAt     DateTime?
+  createdAt  DateTime  @default(now())
 }
