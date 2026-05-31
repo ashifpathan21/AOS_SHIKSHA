@@ -189,3 +189,20 @@ export const ReviewSchema = z.object({
   review: z.string().trim(),
   rating: z.number().min(0).max(5)
 })
+
+export const PostSchema = z.object({
+  caption: z.string().trim()
+})
+
+export const CommentSchema = z.object({
+  comment: z.string().trim()
+})
+
+export const VoteSchema = z.object({
+  type: z.enum(VoteType)
+})
+
+export const ReplySchema = z.object({
+  reply: z.string().trim(),
+  userId: z.number()
+})

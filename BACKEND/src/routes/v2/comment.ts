@@ -6,7 +6,7 @@ import { addReply, deleteReply } from "../../controllers/replyController.js";
 const router = Router();
 
 // comment on post
-router.post('/:postId', authenticate, createComment);
+router.post('/post/:postId', authenticate, createComment);
 
 router.post('/reply/:commentId', authenticate, addReply)
 
