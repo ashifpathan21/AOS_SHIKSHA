@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { upload } from "../../utils/cloudinaryUpload.js";
-import { googleLogin, login, resetPassword, resetPasswordRequest, signup, verifyOtp } from "../../controllers/authController.js";
+import { googleLogin, googleLoginInstructor, login, resetPassword, resetPasswordRequest, signup, verifyOtp } from "../../controllers/authController.js";
 import { authenticate } from "../../middlewares/authmiddleware.js";
 import { changePassword, checkUserNameAvailability, getUserDetails, updateImage, updateProfile, updateUsername } from "../../controllers/userController.js";
 const router = Router()
@@ -13,6 +13,7 @@ router.post('/otp/verify', verifyOtp)
 router.post('/login', login)
 
 router.get('/google/login', googleLogin)
+router.get('/instructor/google/login', googleLoginInstructor)
 
 router.get('/info', authenticate, getUserDetails)
 
