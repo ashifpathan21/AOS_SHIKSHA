@@ -1,10 +1,15 @@
-import { Skeleton } from "./components/ui/skeleton";
+import { Route, Routes } from "react-router-dom";
+import Home from "./pages/Home";
+import Courses from "./pages/Courses";
 
 const App = () => {
   return (
-    <div>
-      <Skeleton className="h-20 w-20" />
-    </div>
+    <>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/courses" element={<Courses />} />
+      </Routes>
+    </>
   );
 };
 

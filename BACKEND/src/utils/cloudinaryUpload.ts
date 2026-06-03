@@ -8,24 +8,6 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Usage example:
-// In an Express route, use `upload.single('file')` or `upload.array('files')` to accept the file upload,
-// then pass the uploaded file buffer to `uploadToCloudinary`.
-//
-// Example:
-// import express from 'express';
-// import { upload, uploadToCloudinary } from './utils/cloudinaryUpload';
-//
-// const router = express.Router();
-// router.post('/upload', upload.single('file'), async (req, res) => {
-//   if (!req.file) return res.status(400).send('No file uploaded.');
-//   try {
-//     const result = await uploadToCloudinary(req.file);
-//     res.json(result);
-//   } catch (error) {
-//     res.status(500).json({ error: (error as Error).message });
-//   }
-// });
 
 export const multerStorage = multer.memoryStorage();
 
